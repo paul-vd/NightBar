@@ -128,25 +128,27 @@ make build   # rebuild the app with the new icon
 The default icon is drawn by `assets/make_icon.py` (needs `pip install pillow`);
 you only touch that if you want to tweak the generated artwork.
 
-## Releasing (automated)
+## Releasing (automated, draft-then-publish)
 
-Releases are built and published by GitHub Actions. To cut one, push a version
-tag:
+Releases are **not** cut on every merge. Instead a draft accumulates until you
+choose to ship:
 
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
+1. **PRs merge to `main`** → **Release Drafter**
+   (`.github/workflows/release-drafter.yml`) updates a *draft* release: it bumps
+   the next version and appends the PR to a categorized changelog. Nothing is
+   published yet.
+2. **When you're ready to ship** → open the **Releases** tab, review/edit the
+   draft, and click **Publish**. (Adjust the version there if needed.)
+3. **Publishing** fires the `Release` workflow
+   (`.github/workflows/release.yml`), which builds `NightBar.dmg` on a macOS
+   runner and **attaches it** to that release.
 
-The `Release` workflow (`.github/workflows/release.yml`) then, on a macOS
-runner: builds the `.app`, packages `NightBar.dmg`, and publishes a GitHub
-Release with **auto-generated release notes** (a changelog of merged PRs since
-the previous tag) and the DMG attached as a download.
-
-Download link for your team: **Releases** tab, or
+Changelog categories come from PR labels (`feature`/`fix`/`docs`/…); same-repo
+branches are auto-labeled from their branch name or title (see
+`.github/release-drafter.yml`). Download link for your team: **Releases** tab or
 `github.com/paul-vd/NightBar/releases/latest`.
 
-> The CI runner has no GUI Finder session, so the released DMG may be
+> The CI runner has no GUI Finder session, so the attached DMG may be
 > *unstyled* (functional drag-to-Applications, without the custom background).
 > For the styled DMG, run `make dmg` locally and upload it to the release.
 

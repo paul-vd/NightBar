@@ -1,34 +1,35 @@
 name: Release
 
-# Push a version tag to cut a release, e.g.:
-#   git tag v0.1.0 && git push origin v0.1.0
+# Fires when you publish the draft that Release Drafter maintains
+# (Releases tab -> edit the draft -> Publish). Publishing creates the tag,
+# then this builds the DMG and attaches it to that release.
 on:
-  push:
-    tags: ["v*"]
+  release:
+    types: [published]
 
 permissions:
-  contents: write   # needed to create the Release and upload assets
+  contents: write   # to upload the DMG asset
 
 jobs:
-  release:
+  attach-dmg:
     runs-on: macos-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
 
-      # Builds the .app and packages the styled .dmg. On the CI runner the
-      # Finder-styling step may be skipped (no GUI session); the Makefile makes
-      # that non-fatal, so a fully functional DMG is still produced.
+      # Builds the .app and packages the DMG. The Finder-styling step is
+      # skipped on CI (no GUI session); the Makefile keeps that non-fatal, so a
+      # functional DMG is still produced.
       - name: Build DMG
         run: make dmg
 
-      - name: Publish GitHub Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: dist/NightBar.dmg
-          generate_release_notes: true   # auto-changelog from merged PRs since last tag
-          fail_on_unmatched_files: true
+      - name: Attach DMG to the release
+        run: gh release upload "${{ github.event.release.tag_name }}" dist/NightBar.dmg --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
