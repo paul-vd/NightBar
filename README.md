@@ -31,24 +31,33 @@ All defined at the top of [`nightbar.py`](nightbar.py):
 - `-t <seconds>` — used only for the timed presets; caffeinate exits on its own
   when the timer elapses.
 
-## Install
+## Quick start
 
-Requires macOS and Python 3.
+Requires macOS and Python 3. Uses a `Makefile` as the task runner (like
+`package.json` scripts). Run `make` on its own to list every command.
 
 ```bash
-cd NightBar
+make run     # run from source          (≈ npm run dev)
+make build   # compile dist/NightBar.app (≈ npm run build)
+make app     # build, then launch it
+make clean   # remove build output
+```
+
+`make run` bootstraps everything on a fresh clone — it creates `.venv`,
+installs dependencies, and launches. No manual venv steps needed.
+
+<details>
+<summary>Manual equivalent (no <code>make</code>)</summary>
+
+```bash
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-## Run
-
-```bash
 python3 nightbar.py
 ```
+</details>
 
-A `○ Off` item appears in the menu bar. Click it:
+Once running, a `○ Off` item appears in the menu bar. Click it:
 
 - **Keep Mac Awake, Allow Display Sleep** — start (runs until stopped)
 - **Start with Timer** → 1 hour / 4 hours / Until Stopped
@@ -63,7 +72,7 @@ title flips back to `○ Off` on its own.
 ### Debug mode
 
 ```bash
-NIGHTBAR_DEBUG=1 python3 nightbar.py
+NIGHTBAR_DEBUG=1 make run
 ```
 
 Logs each command and state change to stderr.
@@ -74,17 +83,17 @@ Start/stop/failure notifications work when the app is bundled (see below). When
 run as a plain script macOS may suppress them — that's expected and the app
 still functions.
 
-## Package as a normal .app (optional, no signing headaches)
+## Package as a normal .app
 
 ```bash
-pip install py2app
-python3 setup.py py2app -A     # -A = alias/development build, fast, unsigned
-open dist/NightBar.app
+make app     # builds a standalone dist/NightBar.app and launches it
 ```
 
-The `-A` build runs from your local files (no code signing required). For a
-distributable bundle drop `-A`. Gatekeeper may still ask you to right-click →
-Open the first time for an unsigned app.
+Drag `dist/NightBar.app` to `/Applications` to launch it from Spotlight/Finder
+like any other app. The bundle is **unsigned**, so on a *different* Mac
+Gatekeeper may block it — right-click → Open the first time, or build it locally
+there with `make build`. A signed/notarized build needs an Apple Developer ID
+(overkill for internal dev use).
 
 ## Launch at login
 
