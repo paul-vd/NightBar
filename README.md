@@ -108,6 +108,19 @@ The bundle/DMG is **unsigned**, so on a *different* Mac Gatekeeper may block it
 build locally there with `make dmg`. A signed/notarized build that opens with a
 plain double-click needs an Apple Developer ID (overkill for internal dev use).
 
+## Change the app icon
+
+The app icon lives at `assets/NightBar.icns` (committed, so builds just use it).
+To use your own artwork, drop a **1024×1024 PNG** at `assets/NightBar.png` and run:
+
+```bash
+make icon    # PNG -> assets/NightBar.icns (uses built-in sips + iconutil)
+make build   # rebuild the app with the new icon
+```
+
+The default icon is drawn by `assets/make_icon.py` (needs `pip install pillow`);
+you only touch that if you want to tweak the generated artwork.
+
 ## Launch at login
 
 Use the **Launch at Login** menu toggle. It writes a LaunchAgent to

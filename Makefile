@@ -39,6 +39,18 @@ build: $(STAMP) ## Compile a standalone dist/NightBar.app (like npm run build)
 app: build ## Build then launch the .app
 	open dist/NightBar.app
 
+.PHONY: icon
+icon: ## Rebuild assets/NightBar.icns from assets/NightBar.png (committed; rarely needed)
+	rm -rf assets/NightBar.iconset && mkdir -p assets/NightBar.iconset
+	@for s in 16 32 128 256 512; do \
+		sips -z $$s $$s assets/NightBar.png --out assets/NightBar.iconset/icon_$${s}x$${s}.png >/dev/null; \
+		d=$$(($$s * 2)); \
+		sips -z $$d $$d assets/NightBar.png --out assets/NightBar.iconset/icon_$${s}x$${s}@2x.png >/dev/null; \
+	done
+	iconutil -c icns assets/NightBar.iconset -o assets/NightBar.icns
+	rm -rf assets/NightBar.iconset
+	@echo "Built assets/NightBar.icns"
+
 .PHONY: dmg
 dmg: build ## Package a drag-to-Applications installer: dist/NightBar.dmg
 	rm -rf dist/dmg dist/NightBar.dmg
