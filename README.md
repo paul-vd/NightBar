@@ -128,29 +128,39 @@ make build   # rebuild the app with the new icon
 The default icon is drawn by `assets/make_icon.py` (needs `pip install pillow`);
 you only touch that if you want to tweak the generated artwork.
 
-## Releasing (automated, draft-then-publish)
+## Releasing (automated via release-please)
 
-Releases are **not** cut on every merge. Instead a draft accumulates until you
-choose to ship:
+Releases are **not** cut on every merge. [release-please][rp] keeps a single
+**Release PR** open that accumulates the next version bump and a `CHANGELOG.md`
+entry, derived from [Conventional Commit][cc] messages on `main`:
 
-1. **PRs merge to `main`** → **Release Drafter**
-   (`.github/workflows/release-drafter.yml`) updates a *draft* release: it bumps
-   the next version and appends the PR to a categorized changelog. Nothing is
-   published yet.
-2. **When you're ready to ship** → open the **Releases** tab, review/edit the
-   draft, and click **Publish**. (Adjust the version there if needed.)
-3. **Publishing** fires the `Release` workflow
-   (`.github/workflows/release.yml`), which builds `NightBar.dmg` on a macOS
-   runner and **attaches it** to that release.
+1. **Merge PRs to `main`** using Conventional Commit titles (`feat: …`,
+   `fix: …`, `docs: …`). release-please opens/updates a Release PR titled like
+   *"chore(main): release 0.2.0"*.
+2. **When you're ready to ship** → merge the Release PR. release-please creates
+   the GitHub Release + tag and updates `CHANGELOG.md`.
+3. A dependent macOS job then builds `NightBar.dmg` and **attaches it** to that
+   release — all in `.github/workflows/release-please.yml`.
 
-Changelog categories come from PR labels (`feature`/`fix`/`docs`/…); same-repo
-branches are auto-labeled from their branch name or title (see
-`.github/release-drafter.yml`). Download link for your team: **Releases** tab or
-`github.com/paul-vd/NightBar/releases/latest`.
+Version bumps follow the commits: `fix:` → patch, `feat:` → minor,
+`feat!:`/`BREAKING CHANGE` → major. Download link for your team: **Releases**
+tab or `github.com/paul-vd/NightBar/releases/latest`.
+
+> Non-Conventional commits (and direct admin pushes) are ignored for
+> versioning, so they won't appear in the changelog — route changes through PRs
+> with Conventional titles.
 
 > The CI runner has no GUI Finder session, so the attached DMG may be
 > *unstyled* (functional drag-to-Applications, without the custom background).
 > For the styled DMG, run `make dmg` locally and upload it to the release.
+
+All GitHub Actions are **pinned to a commit SHA** (not a moving tag like `@v5`)
+to prevent supply-chain tampering; the trailing `# vX.Y.Z` comment records the
+readable version. To bump one, resolve the new tag to its SHA, e.g.
+`gh api repos/actions/checkout/commits/v7 --jq .sha`.
+
+[rp]: https://github.com/googleapis/release-please
+[cc]: https://www.conventionalcommits.org/
 
 ## Contributing
 
@@ -160,10 +170,11 @@ the repo and open a PR; direct pushes to `main` are blocked.
 
 ```bash
 # fork on GitHub, then:
-git checkout -b my-change
+git checkout -b fix/my-change
 # ...edit, then:
 make build          # sanity-check it bundles
-git commit -am "..." && git push origin my-change
+git commit -am "fix: describe the change"   # Conventional Commit message
+git push origin fix/my-change
 # open a PR against paul-vd/NightBar
 ```
 

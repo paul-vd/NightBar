@@ -1,0 +1,55 @@
+name: Release Please
+
+# release-please keeps a "Release PR" open that accrues a CHANGELOG + version
+# bump from Conventional Commit messages on main. Merge that PR to cut a
+# release; the dependent macOS job then builds and attaches the DMG.
+#
+# All actions are pinned to a commit SHA (supply-chain hardening); the trailing
+# comment records the human-readable version.
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write        # create the release + tag, commit the CHANGELOG
+  pull-requests: write   # open/update the Release PR
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      tag_name: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - id: rp
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          config-file: .github/release-please-config.json
+          manifest-file: .github/.release-please-manifest.json
+
+  # Runs only when the Release PR is merged (a release was actually created).
+  # Same workflow run as above, so GITHUB_TOKEN can upload the asset without the
+  # cross-workflow trigger restriction that an `on: release` workflow would hit.
+  attach-dmg:
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      # Finder-styling is skipped on CI (no GUI session); the Makefile keeps
+      # that non-fatal, so a functional DMG is still produced.
+      - name: Build DMG
+        run: make dmg
+
+      - name: Attach DMG to the release
+        run: gh release upload "${{ needs.release-please.outputs.tag_name }}" dist/NightBar.dmg --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
