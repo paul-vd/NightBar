@@ -40,6 +40,7 @@ Requires macOS and Python 3. Uses a `Makefile` as the task runner (like
 make run     # run from source          (≈ npm run dev)
 make build   # compile dist/NightBar.app (≈ npm run build)
 make app     # build, then launch it
+make dmg     # build a drag-to-Applications installer (dist/NightBar.dmg)
 make clean   # remove build output
 ```
 
@@ -90,10 +91,22 @@ make app     # builds a standalone dist/NightBar.app and launches it
 ```
 
 Drag `dist/NightBar.app` to `/Applications` to launch it from Spotlight/Finder
-like any other app. The bundle is **unsigned**, so on a *different* Mac
-Gatekeeper may block it — right-click → Open the first time, or build it locally
-there with `make build`. A signed/notarized build needs an Apple Developer ID
-(overkill for internal dev use).
+like any other app.
+
+## Build a drag-to-Applications installer (.dmg)
+
+```bash
+make dmg     # produces dist/NightBar.dmg
+```
+
+Open the `.dmg` and drag **NightBar** onto the **Applications** shortcut — the
+familiar installer window. Attach `dist/NightBar.dmg` to a GitHub Release to
+give your team a download link.
+
+The bundle/DMG is **unsigned**, so on a *different* Mac Gatekeeper may block it
+("damaged / unidentified developer") — right-click → Open the first time, or
+build locally there with `make dmg`. A signed/notarized build that opens with a
+plain double-click needs an Apple Developer ID (overkill for internal dev use).
 
 ## Launch at login
 

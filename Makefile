@@ -39,6 +39,16 @@ build: $(STAMP) ## Compile a standalone dist/NightBar.app (like npm run build)
 app: build ## Build then launch the .app
 	open dist/NightBar.app
 
+.PHONY: dmg
+dmg: build ## Package a drag-to-Applications installer: dist/NightBar.dmg
+	rm -rf dist/dmg dist/NightBar.dmg
+	mkdir -p dist/dmg
+	cp -R dist/NightBar.app dist/dmg/
+	ln -s /Applications dist/dmg/Applications
+	hdiutil create -volname NightBar -srcfolder dist/dmg -ov -format UDZO dist/NightBar.dmg
+	rm -rf dist/dmg
+	@echo "Built dist/NightBar.dmg"
+
 .PHONY: clean
 clean: ## Remove build output (build/, dist/, __pycache__)
 	rm -rf build dist
