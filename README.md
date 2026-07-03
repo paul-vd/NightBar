@@ -128,6 +128,43 @@ make build   # rebuild the app with the new icon
 The default icon is drawn by `assets/make_icon.py` (needs `pip install pillow`);
 you only touch that if you want to tweak the generated artwork.
 
+## Releasing (automated)
+
+Releases are built and published by GitHub Actions. To cut one, push a version
+tag:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The `Release` workflow (`.github/workflows/release.yml`) then, on a macOS
+runner: builds the `.app`, packages `NightBar.dmg`, and publishes a GitHub
+Release with **auto-generated release notes** (a changelog of merged PRs since
+the previous tag) and the DMG attached as a download.
+
+Download link for your team: **Releases** tab, or
+`github.com/paul-vd/NightBar/releases/latest`.
+
+> The CI runner has no GUI Finder session, so the released DMG may be
+> *unstyled* (functional drag-to-Applications, without the custom background).
+> For the styled DMG, run `make dmg` locally and upload it to the release.
+
+## Contributing
+
+`main` is protected: all changes go through a pull request that must pass CI
+(`.github/workflows/ci.yml` builds the app on macOS). Outside contributors fork
+the repo and open a PR; direct pushes to `main` are blocked.
+
+```bash
+# fork on GitHub, then:
+git checkout -b my-change
+# ...edit, then:
+make build          # sanity-check it bundles
+git commit -am "..." && git push origin my-change
+# open a PR against paul-vd/NightBar
+```
+
 ## Launch at login
 
 Use the **Launch at Login** menu toggle. It writes a LaunchAgent to
