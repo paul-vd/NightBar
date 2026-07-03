@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# py2app build output
+build/
+dist/
+
+# macOS
+.DS_Store
