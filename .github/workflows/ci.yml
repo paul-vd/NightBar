@@ -1,0 +1,24 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Syntax check
+        run: python3 -m py_compile nightbar.py setup.py assets/make_icon.py assets/make_dmg_bg.py
+
+      # Confirms the app actually bundles (catches broken deps / setup.py).
+      - name: Build .app
+        run: make build
