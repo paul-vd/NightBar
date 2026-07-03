@@ -99,9 +99,16 @@ like any other app.
 make dmg     # produces dist/NightBar.dmg
 ```
 
-Open the `.dmg` and drag **NightBar** onto the **Applications** shortcut — the
-familiar installer window. Attach `dist/NightBar.dmg` to a GitHub Release to
-give your team a download link.
+Open the `.dmg` and you get the familiar styled installer window — a curved
+arrow pointing NightBar onto the **Applications** shortcut (big icons, custom
+background). Attach `dist/NightBar.dmg` to a GitHub Release to give your team a
+download link.
+
+The styling step drives Finder via AppleScript. The first time you run
+`make dmg`, macOS may ask for permission to control Finder — allow it. If it's
+denied, the build still completes with a plain (unstyled) but fully working DMG.
+To restyle the background/arrow, edit `assets/make_dmg_bg.py`
+(`pip install pillow && python assets/make_dmg_bg.py`).
 
 The bundle/DMG is **unsigned**, so on a *different* Mac Gatekeeper may block it
 ("damaged / unidentified developer") — right-click → Open the first time, or

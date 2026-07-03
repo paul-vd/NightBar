@@ -52,13 +52,22 @@ icon: ## Rebuild assets/NightBar.icns from assets/NightBar.png (committed; rarel
 	@echo "Built assets/NightBar.icns"
 
 .PHONY: dmg
-dmg: build ## Package a drag-to-Applications installer: dist/NightBar.dmg
-	rm -rf dist/dmg dist/NightBar.dmg
-	mkdir -p dist/dmg
+dmg: build ## Package a styled drag-to-Applications installer: dist/NightBar.dmg
+	rm -rf dist/dmg dist/NightBar-rw.dmg dist/NightBar.dmg
+	mkdir -p dist/dmg/.background
 	cp -R dist/NightBar.app dist/dmg/
 	ln -s /Applications dist/dmg/Applications
-	hdiutil create -volname NightBar -srcfolder dist/dmg -ov -format UDZO dist/NightBar.dmg
-	rm -rf dist/dmg
+	cp assets/dmg_bg.png dist/dmg/.background/dmg_bg.png
+	# Read-write image so Finder can save the window layout into .DS_Store.
+	hdiutil create -volname NightBar -srcfolder dist/dmg -fs HFS+ -format UDRW -ov dist/NightBar-rw.dmg
+	hdiutil attach dist/NightBar-rw.dmg -mountpoint /Volumes/NightBar -nobrowse
+	# Finder automation may be blocked (see README); '-' lets the build finish
+	# with a plain (unstyled) DMG rather than failing.
+	-osascript scripts/dmg_style.applescript NightBar
+	sync
+	hdiutil detach /Volumes/NightBar
+	hdiutil convert dist/NightBar-rw.dmg -format UDZO -o dist/NightBar.dmg
+	rm -rf dist/dmg dist/NightBar-rw.dmg
 	@echo "Built dist/NightBar.dmg"
 
 .PHONY: clean
