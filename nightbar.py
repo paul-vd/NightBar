@@ -33,6 +33,7 @@ import rumps
 #   -t <sec>  Run for a fixed number of seconds, then exit.
 #
 # So "keep system awake, allow display to sleep" == `caffeinate -i -m`.
+# Add `-d` to also keep the *display* awake (the "Keep Display Awake Too" toggle).
 # For a timed run we append `-t <seconds>`.
 CAFFEINATE = shutil.which("caffeinate") or "/usr/bin/caffeinate"
 CAFFEINATE_BASE = [CAFFEINATE, "-i", "-m"]
@@ -74,6 +75,7 @@ class NightBar(rumps.App):
 
         self.proc = None            # subprocess.Popen for caffeinate, or None
         self.end_time = None        # epoch seconds when a timed run ends, or None
+        self.keep_display = False   # add `-d`: keep the display awake too
 
         # Build the menu once; we mutate item titles/state on refresh.
         self.status_item = rumps.MenuItem("Inactive")
@@ -93,6 +95,9 @@ class NightBar(rumps.App):
         self.sleep_display_item = rumps.MenuItem(
             "Sleep Display Now", callback=self.sleep_display
         )
+        self.display_item = rumps.MenuItem(
+            "Keep Display Awake Too", callback=self.toggle_display
+        )
         self.login_item = rumps.MenuItem(
             "Launch at Login", callback=self.toggle_login
         )
@@ -104,6 +109,7 @@ class NightBar(rumps.App):
             preset_menu,
             self.stop_item,
             None,
+            self.display_item,
             self.sleep_display_item,
             None,
             self.login_item,
@@ -145,6 +151,8 @@ class NightBar(rumps.App):
             return
 
         cmd = list(CAFFEINATE_BASE)
+        if self.keep_display:
+            cmd.append("-d")
         if duration is not None:
             cmd += ["-t", str(int(duration))]
 
@@ -160,16 +168,12 @@ class NightBar(rumps.App):
         self.end_time = (time.time() + duration) if duration else None
         self.refresh(None)
 
-        if duration:
-            self._notify(
-                "NightBar", "Keeping Mac awake",
-                f"Display may sleep · {self._fmt_short(duration)} timer · pid {self.proc.pid}",
-            )
-        else:
-            self._notify(
-                "NightBar", "Keeping Mac awake",
-                f"Display may sleep · until stopped · pid {self.proc.pid}",
-            )
+        display = "Display stays on" if self.keep_display else "Display may sleep"
+        when = f"{self._fmt_short(duration)} timer" if duration else "until stopped"
+        self._notify(
+            "NightBar", "Keeping Mac awake",
+            f"{display} · {when} · pid {self.proc.pid}",
+        )
 
     def start_until_stopped(self, _):
         self.start(duration=None)
@@ -205,6 +209,19 @@ class NightBar(rumps.App):
             subprocess.run(DISPLAY_SLEEP_CMD, check=True)
         except (OSError, subprocess.CalledProcessError) as e:
             self._notify("NightBar", "Sleep display failed", str(e))
+
+    def toggle_display(self, _):
+        self.keep_display = not self.keep_display
+        # If a session is running, restart it so the -d change takes effect,
+        # preserving any remaining timer duration.
+        if self.is_active():
+            remaining = self.remaining_seconds()
+            # remaining_seconds() clamps to 0; a dead timer means don't relaunch
+            # (start(duration=0) would emit `caffeinate -t 0` in an untimed state).
+            if remaining is None or remaining > 0:
+                self.stop(None)
+                self.start(duration=remaining)
+        self.refresh(None)
 
     def toggle_login(self, _):
         if os.path.exists(LAUNCH_AGENT_PATH):
@@ -256,6 +273,7 @@ class NightBar(rumps.App):
         # Enable/disable actions to match state.
         self.start_item.set_callback(None if active else self.start_until_stopped)
         self.stop_item.set_callback(self.stop if active else None)
+        self.display_item.state = self.keep_display
         self.login_item.state = os.path.exists(LAUNCH_AGENT_PATH)
 
     # -- misc ---------------------------------------------------------------
