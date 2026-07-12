@@ -216,8 +216,11 @@ class NightBar(rumps.App):
         # preserving any remaining timer duration.
         if self.is_active():
             remaining = self.remaining_seconds()
-            self.stop(None)
-            self.start(duration=remaining)
+            # remaining_seconds() clamps to 0; a dead timer means don't relaunch
+            # (start(duration=0) would emit `caffeinate -t 0` in an untimed state).
+            if remaining is None or remaining > 0:
+                self.stop(None)
+                self.start(duration=remaining)
         self.refresh(None)
 
     def toggle_login(self, _):
